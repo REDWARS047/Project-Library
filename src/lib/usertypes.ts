@@ -16,3 +16,4 @@ export interface UserSession {
     logout_timestamp: string | null;
     session_duration: number | null;
 }
+
