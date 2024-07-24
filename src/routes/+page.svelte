@@ -96,6 +96,11 @@
 	{/if}
 </div>
 
+<button
+	class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+	on:click={navigateToDashboard}>Go to Dashboard</button
+>
+
 <div class="mt-10 sm:mt-20 md:mt-40 w-full">
 	{#if latestUser}
 		<Modal class="h-[50rem] mt-[5rem] w-[50rem] shadow-xl" bind:open={defaultModal}>
