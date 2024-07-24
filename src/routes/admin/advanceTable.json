@@ -1,0 +1,13 @@
+[
+    {
+      "id": 1,
+      "first_name": "John",
+      "last_name": "Doe",
+      "student_id": "12345",
+      "department": "CCIS",
+      "rfid_id": "RFID123456",
+      "time_in": "08:00",
+      "time_out": "12:00",
+      "date": "2024-07-24"
+    }
+]

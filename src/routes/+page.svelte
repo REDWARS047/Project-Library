@@ -6,6 +6,7 @@
 	import LoginMessage from '$lib/components/rfid/RFIDMessage.svelte';
 	import { goto } from '$app/navigation';
 	import { Modal } from 'flowbite-svelte';
+	import { fade, scale } from 'svelte/transition';
 
 	export let users: User[] = [];
 	export let userSessions: UserSession[] = [];
@@ -85,6 +86,10 @@
 	function navigateToDashboard() {
 		goto('/dashboard'); // Adjust '/dashboard' as needed based on your routing setup
 	}
+
+	function closeModal() {
+		defaultModal = false;
+	}
 </script>
 
 <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-900">
@@ -107,15 +112,12 @@
 			<div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-0"></div>
 			<!-- Overlay for greyed/blurred background -->
 		{/if}
-		<Modal
-			class="modal-container h-[50rem] mt-[5rem] w-[50rem] shadow-xl z-20"
-			bind:open={defaultModal}
-		>
-			<div class="flex flex-col items-center justify-center">
+		<Modal class="bg-white rounded-lg shadow-lg" bind:open={defaultModal}>
+			<div class="flex flex-col items-center justify-center p-4 relative">
 				<img
 					src={latestUser.photo_url}
 					alt="{latestUser.given_name} {latestUser.last_name}'s photo"
-					class="w-72 h-72 object-cover rounded-lg"
+					class="w-72 h-72 object-cover rounded-lg mb-4"
 				/>
 				<p class="text-4xl leading-relaxed text-center mt-1 font-black">
 					{latestUser.given_name}

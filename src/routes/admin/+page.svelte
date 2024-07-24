@@ -15,7 +15,7 @@
 		ButtonGroup
 	} from 'flowbite-svelte';
 	import { Section } from 'flowbite-svelte-blocks';
-	import paginationData from '../../../static/advanceTable.json'; // Make sure to update this JSON file with the correct data format
+	import paginationData from './advanceTable.json'; // Make sure to update this JSON file with the correct data format
 	import {
 		PlusOutline,
 		ChevronDownOutline,
