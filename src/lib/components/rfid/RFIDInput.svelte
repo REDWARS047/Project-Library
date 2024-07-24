@@ -6,11 +6,11 @@
 
 	function handleInput(event: Event) {
 		let input = inputElement.value;
-		
+
 		if (input.length > 10) {
-            input = input.substring(0, 10);
-            inputElement.value = input;
-        }
+			input = input.substring(0, 10);
+			inputElement.value = input;
+		}
 
 		if (input.length === 10 && /^\d{10}$/.test(input)) {
 			dispatch('login', input);
@@ -45,7 +45,7 @@
 	placeholder="Scan RFID"
 	on:input={handleInput}
 	autofocus
-	class="rounded-lg w-full no-spinner"
+	class="rounded-lg w-full no-spinner focus:border-blue-900"
 />
 
 <style>

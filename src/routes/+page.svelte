@@ -6,7 +6,6 @@
 	import LoginMessage from '$lib/components/rfid/RFIDMessage.svelte';
 	import { goto } from '$app/navigation';
 	import { Modal } from 'flowbite-svelte';
-	import { fade, scale } from 'svelte/transition';
 
 	export let users: User[] = [];
 	export let userSessions: UserSession[] = [];
@@ -86,21 +85,17 @@
 	function navigateToDashboard() {
 		goto('/dashboard'); // Adjust '/dashboard' as needed based on your routing setup
 	}
-
-	function closeModal() {
-		defaultModal = false;
-	}
 </script>
 
 <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-900">
 	<div class="w-full max-w-md p-8 bg-white shadow-md rounded-md">
-		<h1 class="text-4xl font-bold mb-6 text-center">Welcome Back</h1>
+		<h1 class="text-4xl text-blue-900 font-black mb-6 text-center">WELCOME BACK</h1>
 		<LoginInput on:login={onLogin} />
 		{#if loginMessage}
 			<LoginMessage {loginMessage} {loginOutSuccessful} />
 		{/if}
 		<button
-			class="mt-6 w-full py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+			class="mt-6 w-full py-2 bg-blue-900 text-white rounded-md hover:bg-red-600 transition-colors"
 			on:click={navigateToDashboard}
 		>
 			Go to Dashboard
@@ -108,10 +103,6 @@
 	</div>
 
 	{#if latestUser}
-		{#if defaultModal}
-			<div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-0"></div>
-			<!-- Overlay for greyed/blurred background -->
-		{/if}
 		<Modal class="bg-white rounded-lg shadow-lg" bind:open={defaultModal}>
 			<div class="flex flex-col items-center justify-center p-4 relative">
 				<img
@@ -119,15 +110,19 @@
 					alt="{latestUser.given_name} {latestUser.last_name}'s photo"
 					class="w-72 h-72 object-cover rounded-lg mb-4"
 				/>
-				<p class="text-4xl leading-relaxed text-center mt-1 font-black">
+				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
 					{latestUser.given_name}
 					{latestUser.middle_name}
 					{latestUser.last_name}
 				</p>
-				<p class="text-4xl leading-relaxed text-center mt-1 font-black">{latestUser.id}</p>
-				<p class="text-4xl leading-relaxed text-center mt-1 font-black">CCIS</p>
-				<p class="text-4xl leading-relaxed text-center mt-1 font-black">CS</p>
-				<p class="text-4xl leading-relaxed text-center mt-1 font-black">{loginLogoutTimestamp}</p>
+				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">CCIS</p>
+				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
+					{latestUser.id}
+				</p>
+				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">CS</p>
+				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
+					{loginLogoutTimestamp}
+				</p>
 			</div>
 		</Modal>
 	{/if}
