@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Card } from 'flowbite-svelte';
+	import { goto } from '$app/navigation';
 
 	const colleges = [
 		{ name: 'CAS', departments: ['COMM', 'MMA'] },
@@ -20,9 +21,14 @@
 	const totalAttendance = Object.values(attendanceData).reduce((total, dept) => {
 		return total + Object.values(dept).reduce((subTotal, value) => subTotal + value, 0);
 	}, 0);
+
+	function navigateToAdmin() {
+		goto('/admin');
+	}
 </script>
 
 <Card>
+	<button on:click={navigateToAdmin}>TEST</button>
 	<div class="flex justify-between pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
 		<div>
 			<h5 class="leading-none text-2xl font-bold text-gray-900 dark:text-white pb-1">

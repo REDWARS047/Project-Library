@@ -87,23 +87,30 @@
 	}
 </script>
 
-<div
-	class="fixed top-0 left-1/2 transform -translate-x-1/2 mt-10 px-4 w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl"
->
-	<LoginInput on:login={onLogin} />
-	{#if loginMessage}
-		<LoginMessage {loginMessage} {loginOutSuccessful} />
-	{/if}
-</div>
+<div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-900">
+	<div class="w-full max-w-md p-8 bg-white shadow-md rounded-md">
+		<h1 class="text-4xl font-bold mb-6 text-center">Welcome Back</h1>
+		<LoginInput on:login={onLogin} />
+		{#if loginMessage}
+			<LoginMessage {loginMessage} {loginOutSuccessful} />
+		{/if}
+		<button
+			class="mt-6 w-full py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+			on:click={navigateToDashboard}
+		>
+			Go to Dashboard
+		</button>
+	</div>
 
-<button
-	class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-	on:click={navigateToDashboard}>Go to Dashboard</button
->
-
-<div class="mt-10 sm:mt-20 md:mt-40 w-full">
 	{#if latestUser}
-		<Modal class="h-[50rem] mt-[5rem] w-[50rem] shadow-xl" bind:open={defaultModal}>
+		{#if defaultModal}
+			<div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-0"></div>
+			<!-- Overlay for greyed/blurred background -->
+		{/if}
+		<Modal
+			class="modal-container h-[50rem] mt-[5rem] w-[50rem] shadow-xl z-20"
+			bind:open={defaultModal}
+		>
 			<div class="flex flex-col items-center justify-center">
 				<img
 					src={latestUser.photo_url}
