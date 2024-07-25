@@ -27,9 +27,13 @@
 	}
 </script>
 
-<Card>
-	<button on:click={navigateToAdmin}>TEST</button>
-	<div class="flex justify-between pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+<button
+	class="mt-6 w-full py-2 bg-blue-900 text-white rounded-md hover:bg-red-600 transition-colors"
+	on:click={navigateToAdmin}>TEST</button
+>
+
+<Card class="mx-auto my-auto w-full max-w-md min-w-full">
+	<div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
 		<div>
 			<h5 class="leading-none text-2xl font-bold text-gray-900 dark:text-white pb-1">
 				Library Attendance Statistics Report
@@ -50,9 +54,9 @@
 			{#each college.departments as department}
 				<div class="flex justify-between border-b border-gray-200 dark:border-gray-700 py-1">
 					<span class="text-sm font-normal text-gray-500 dark:text-gray-400">{department}</span>
-					<span class="text-sm font-semibold text-gray-900 dark:text-white"
-						>{attendanceData[college.name][department]}</span
-					>
+					<span class="text-sm font-semibold text-gray-900 dark:text-white">
+						{attendanceData[college.name][department]}
+					</span>
 				</div>
 			{/each}
 		</div>
