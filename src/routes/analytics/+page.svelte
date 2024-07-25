@@ -24,6 +24,7 @@
 		ChevronRightOutline,
 		ChevronLeftOutline
 	} from 'flowbite-svelte-icons';
+	import NavBar from '$lib/components/navbar/navBar.svelte';
 
 	let divClass = 'bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden';
 	let innerDivClass =
@@ -140,6 +141,8 @@
 
 	$: currentPageItems = filteredItems.slice(currentPosition, currentPosition + itemsPerPage);
 </script>
+
+<NavBar />
 
 <Section name="advancedTable" classSection="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5">
 	<TableSearch

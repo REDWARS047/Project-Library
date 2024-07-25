@@ -82,8 +82,8 @@
 		}
 	}
 
-	function navigateToDashboard() {
-		goto('/dashboard'); // Adjust '/dashboard' as needed based on your routing setup
+	function navigateTo() {
+		goto('/reports'); // Adjust '/dashboard' as needed based on your routing setup
 	}
 </script>
 
@@ -96,7 +96,7 @@
 		{/if}
 		<button
 			class="mt-6 w-full py-2 bg-blue-900 text-white rounded-md hover:bg-red-600 transition-colors"
-			on:click={navigateToDashboard}
+			on:click={navigateTo}
 		>
 			Go to Dashboard
 		</button>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Card } from 'flowbite-svelte';
-	import { goto } from '$app/navigation';
+	import NavBar from '$lib/components/navbar/navBar.svelte';
 
 	const colleges = [
 		{ name: 'CAS', departments: ['COMM', 'MMA'] },
@@ -21,16 +21,9 @@
 	const totalAttendance = Object.values(attendanceData).reduce((total, dept) => {
 		return total + Object.values(dept).reduce((subTotal, value) => subTotal + value, 0);
 	}, 0);
-
-	function navigateToAdmin() {
-		goto('/admin');
-	}
 </script>
 
-<button
-	class="mt-6 w-full py-2 bg-blue-900 text-white rounded-md hover:bg-red-600 transition-colors"
-	on:click={navigateToAdmin}>TEST</button
->
+<NavBar />
 
 <Card class="mx-auto my-auto w-full max-w-md min-w-full">
 	<div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
