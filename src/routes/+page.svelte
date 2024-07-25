@@ -107,13 +107,13 @@
 			<div class="flex flex-col items-center justify-center p-4 relative">
 				<img
 					src={latestUser.photo_url}
-					alt="{latestUser.given_name} {latestUser.last_name}'s photo"
-					class="w-72 h-72 object-cover rounded-lg mb-4"
+					alt="{latestUser.given_name}'s photo"
+					class="w-72 h-72 object-cover rounded-full mb-4"
 				/>
 				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
 					{latestUser.given_name}
-					{latestUser.middle_name}
-					{latestUser.last_name}
+					<!-- {latestUser.middle_name} -->
+					<!-- {latestUser.last_name} -->
 				</p>
 				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">CCIS</p>
 				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">

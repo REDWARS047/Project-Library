@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { onMount } from 'svelte';
 	import {
 		Table,
@@ -15,7 +15,8 @@
 		ButtonGroup
 	} from 'flowbite-svelte';
 	import { Section } from 'flowbite-svelte-blocks';
-	import paginationData from './advanceTable.json'; // Make sure to update this JSON file with the correct data format
+	import type { User } from '$lib/usertypes';
+	import { fetchUsers } from '$lib/service/supabaseService';
 	import {
 		PlusOutline,
 		ChevronDownOutline,
@@ -32,15 +33,28 @@
 	let classInput =
 		'text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2  pl-10';
 
+	export let users: User[] = [];
+
 	let searchTerm = '';
 	let currentPosition = 0;
 	const itemsPerPage = 10;
 	const showPage = 5;
 	let totalPages = 0;
-	let pagesToShow = [];
-	let totalItems = paginationData.length;
-	let startPage;
-	let endPage;
+	let pagesToShow: number[] = [];
+	let totalItems = 0;
+	let startPage: number[] = [];
+	let endPage: number[] = [];
+	let paginationData: User[] = [];
+	let selectedDepartments: string[] = [];
+	let selectedItems = new Set();
+
+	async function fetchData() {
+		try {
+			users = await fetchUsers();
+		} catch (error) {
+			console.error('Error refreshing data:', error);
+		}
+	}
 
 	const updateDataAndPagination = () => {
 		const currentPageItems = paginationData.slice(currentPosition, currentPosition + itemsPerPage);
@@ -77,18 +91,54 @@
 		updateDataAndPagination();
 	};
 
+	const toggleDepartmentFilter = (department) => {
+		if (selectedDepartments.includes(department)) {
+			selectedDepartments = selectedDepartments.filter((dept) => dept !== department);
+		} else {
+			selectedDepartments.push(department);
+		}
+	};
+
+	// const deleteAllItems = async () => {
+	// 	// Example: Deleting all rows from Supabase
+	// 	const { error } = await supabase.from('students').delete().neq('id', '');
+	// 	if (error) {
+	// 		console.error('Error deleting all items:', error);
+	// 	}
+	// 	paginationData = [];
+	// 	updateDataAndPagination();
+	// };
+
+	const massEditItems = () => {
+		// Implement your mass edit logic here
+		alert('Mass Edit functionality is not implemented yet.');
+	};
+
+	const toggleItemSelection = (itemId) => {
+		if (selectedItems.has(itemId)) {
+			selectedItems.delete(itemId);
+		} else {
+			selectedItems.add(itemId);
+		}
+	};
+
 	$: startRange = currentPosition + 1;
 	$: endRange = Math.min(currentPosition + itemsPerPage, totalItems);
 
-	onMount(() => {
-		// Call renderPagination when the component initially mounts
+	onMount(async () => {
+		paginationData = await fetchData();
+		totalItems = paginationData.length;
 		renderPagination(paginationData.length);
 	});
 
-	$: currentPageItems = paginationData.slice(currentPosition, currentPosition + itemsPerPage);
-	$: filteredItems = paginationData.filter(
-		(item) => item.first_name.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1
-	);
+	$: filteredItems = paginationData.filter((item) => {
+		const matchesSearch = item.first_name.toLowerCase().includes(searchTerm.toLowerCase());
+		const matchesDepartment =
+			selectedDepartments.length === 0 || selectedDepartments.includes(item.department);
+		return matchesSearch && matchesDepartment;
+	});
+
+	$: currentPageItems = filteredItems.slice(currentPosition, currentPosition + itemsPerPage);
 </script>
 
 <Section name="advancedTable" classSection="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5">
@@ -110,26 +160,26 @@
 			</Button>
 			<Button color="alternative">Actions<ChevronDownOutline class="w-3 h-3 ml-2 " /></Button>
 			<Dropdown class="w-44 divide-y divide-gray-100">
-				<DropdownItem>Mass Edit</DropdownItem>
-				<DropdownItem>Delete all</DropdownItem>
+				<DropdownItem on:click={massEditItems}>Mass Edit</DropdownItem>
+				<!-- <DropdownItem on:click={deleteAllItems}>Delete all</DropdownItem> -->
 			</Dropdown>
 			<Button color="alternative">Filter<FilterSolid class="w-3 h-3 ml-2 " /></Button>
 			<Dropdown class="w-48 p-3 space-y-2 text-sm">
 				<h6 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Choose Department</h6>
 				<li>
-					<Checkbox>CCIS</Checkbox>
+					<Checkbox on:change={() => toggleDepartmentFilter('CCIS')}>CCIS</Checkbox>
 				</li>
 				<li>
-					<Checkbox>CEA</Checkbox>
+					<Checkbox on:change={() => toggleDepartmentFilter('CEA')}>CEA</Checkbox>
 				</li>
 				<li>
-					<Checkbox>CHS</Checkbox>
+					<Checkbox on:change={() => toggleDepartmentFilter('CHS')}>CHS</Checkbox>
 				</li>
 				<li>
-					<Checkbox>CAS</Checkbox>
+					<Checkbox on:change={() => toggleDepartmentFilter('CAS')}>CAS</Checkbox>
 				</li>
 				<li>
-					<Checkbox>ATYCB</Checkbox>
+					<Checkbox on:change={() => toggleDepartmentFilter('ATYCB')}>ATYCB</Checkbox>
 				</li>
 			</Dropdown>
 		</div>
