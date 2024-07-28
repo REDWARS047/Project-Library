@@ -10,6 +10,6 @@
 	<NavUl>
 		<NavLi href="/">Home</NavLi>
 		<NavLi href="/reports">Reports</NavLi>
-		<NavLi href="/analytics">Analytics</NavLi>
+		<NavLi href="/analytics">Admin</NavLi>
 	</NavUl>
 </Navbar>
