@@ -1,5 +1,5 @@
 import { supabase } from '$lib/supabaseClient';
-import type { User, UserSession } from '$lib/usertypes';
+import type { User, UserSession, Department, Course} from '$lib/usertypes';
 
 let recentLogins = new Map<string, { timestamp: number; tapCount: number }>();
 
@@ -31,6 +31,35 @@ export async function fetchUserSessions(): Promise<UserSession[]> {
 		return data || [];
 	} catch (error) {
 		console.error('Error fetching user sessions:', error);
+		return [];
+	}
+}
+
+
+export async function fetchUserDepartment(id: number): Promise<Department[]> {
+	try {
+		const { data, error } = await supabase.from('departments').select().eq('id', id);
+		if (error) {
+			console.error('Error fetching departments:', error);
+			return [];
+		}
+		return data || [];
+	} catch (error) {
+		console.error('Error fetching departments:', error);
+		return [];
+	}
+}
+
+export async function fetchUserCourse(id: number): Promise<Course[]> {
+	try {
+		const { data, error } = await supabase.from('courses').select().eq('id', id);
+		if (error) {
+			console.error('Error fetching courses:', error);
+			return [];
+		}
+		return data || [];
+	} catch (error) {
+		console.error('Error fetching courses:', error);
 		return [];
 	}
 }
@@ -113,7 +142,7 @@ async function logoutUser(session: UserSession, user: User, currentTime: Date) {
 		const logoutTimeString = currentTime.toLocaleString();
 		const loginTime = convertToLocalTime(session.login_timestamp);
 		const formattedDuration = formatDuration(currentTime.getTime() - loginTime.getTime());
-        
+
 		const { error } = await supabase
 			.from('user_sessions')
 			.update({

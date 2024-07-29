@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import type { User, UserSession } from '$lib/usertypes';
-	import { handleUserLogin, fetchUsers, fetchUserSessions } from '$lib/service/supabaseService';
+	import type { User, UserSession, Department, Course } from '$lib/usertypes';
+	import {
+		handleUserLogin,
+		fetchUsers,
+		fetchUserSessions,
+		fetchUserDepartment,
+		fetchUserCourse
+	} from '$lib/service/supabaseService';
 	import LoginInput from '$lib/components/rfid/RFIDInput.svelte';
 	import LoginMessage from '$lib/components/rfid/RFIDMessage.svelte';
 	import { goto } from '$app/navigation';
@@ -10,22 +16,28 @@
 	export let users: User[] = [];
 	export let userSessions: UserSession[] = [];
 	let latestUserSession: UserSession | null = null;
-	let latestUser: User | null = null;
+	let recentUsers: Array<{
+		user: User;
+		department: Department;
+		course: Course;
+		timestamp: string;
+		isLoggedIn: boolean;
+	}> = [];
+	const MAX_RECENT_USERS = 10; // Adjust this number as needed
 	let loginMessage = '';
 	let loginOutSuccessful = false;
 	let messageTimeoutId: string | number | NodeJS.Timeout | undefined;
 	let intervalId: ReturnType<typeof setInterval>;
 	let defaultModal = false;
 	let modalTimeoutId: string | number | NodeJS.Timeout | undefined;
-	let loginLogoutTimestamp: string = '';
 
 	async function refreshData() {
 		try {
+			console.log('Refreshing data...');
 			users = await fetchUsers();
 			userSessions = await fetchUserSessions();
 			latestUserSession = getLatestUserSession(userSessions);
-			latestUser = users.find((user) => user.id === latestUserSession?.user_id) || null;
-			console.log('Data refreshed');
+			console.log('Data refreshed:', { users, userSessions, latestUserSession });
 		} catch (error) {
 			console.error('Error refreshing data:', error);
 		}
@@ -41,26 +53,65 @@
 	}
 
 	onMount(async () => {
+		console.log('Component mounted');
 		await refreshData();
 		intervalId = setInterval(refreshData, 35000);
 	});
 
 	onDestroy(() => {
+		console.log('Component destroyed');
 		clearInterval(intervalId);
 	});
 
+	let latestUser: {
+		user: User;
+		department: Department;
+		course: Course;
+		timestamp: string;
+		isLoggedIn: boolean;
+	} | null = null;
+
 	async function onLogin(event: CustomEvent<string>) {
 		const rfid = event.detail;
+		console.log('RFID received:', rfid);
 		if (rfid.length !== 10) {
+			console.warn('Invalid RFID length');
 			return;
 		}
 		const { message, success } = await handleUserLogin(rfid, users, userSessions);
 		loginMessage = message;
 		loginOutSuccessful = success;
+		console.log('Login result:', { message, success });
 		userSessions = await fetchUserSessions();
 		latestUserSession = getLatestUserSession(userSessions);
-		latestUser = users.find((user) => user.id === latestUserSession?.user_id) || null;
-		loginLogoutTimestamp = new Date().toLocaleString(); // Capture the current timestamp
+		const loginLogoutTimestamp = new Date().toLocaleString();
+
+		if (success) {
+			const currentUser = users.find((user) => user.rfid === rfid);
+			if (currentUser) {
+				const currentUserCourse = (await fetchUserCourse(currentUser.course_id))[0];
+				const currentUserDepartment = (
+					await fetchUserDepartment(currentUserCourse.department_id)
+				)[0];
+
+				const isLoggedIn = !latestUserSession?.logout_timestamp;
+
+				latestUser = {
+					user: currentUser,
+					department: currentUserDepartment,
+					course: currentUserCourse,
+					timestamp: loginLogoutTimestamp,
+					isLoggedIn: isLoggedIn
+				};
+
+				console.log('Current user details:', {
+					currentUser,
+					currentUserCourse,
+					currentUserDepartment,
+					isLoggedIn
+				});
+			}
+		}
 
 		if (messageTimeoutId) {
 			clearTimeout(messageTimeoutId);
@@ -70,7 +121,7 @@
 			loginOutSuccessful = false;
 		}, 2000);
 
-		// Show the modal on successful login
+		// Show the modal on successful login/logout
 		if (success) {
 			defaultModal = true;
 			if (modalTimeoutId) {
@@ -83,7 +134,8 @@
 	}
 
 	function navigateTo() {
-		goto('/reports'); // Adjust '/dashboard' as needed based on your routing setup
+		console.log('Navigating to dashboard');
+		goto('/dashboard');
 	}
 </script>
 
@@ -104,27 +156,30 @@
 
 	{#if latestUser}
 		<Modal class="bg-white rounded-lg shadow-lg" bind:open={defaultModal}>
-			<div class="flex flex-col items-center justify-center p-4 relative">
+			<div class="flex flex-col items-center justify-center p-4">
 				<img
-					src={latestUser.photo_url}
-					alt="{latestUser.given_name}'s photo"
-					class="w-72 h-72 object-cover rounded-full mb-4"
+					src={latestUser.user.photo_url}
+					alt="{latestUser.user.given_name}'s photo"
+					class="w-32 h-32 object-cover rounded-full mb-4"
 				/>
-				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
-					{latestUser.given_name}
-					<!-- {latestUser.middle_name} -->
-					<!-- {latestUser.last_name} -->
+				<p class="text-2xl text-blue-900 leading-relaxed text-center mt-1 font-black">
+					{latestUser.user.given_name}
+					{latestUser.user.last_name}
 				</p>
-				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
-					{latestUser.group}
+				<p class="text-xl text-blue-900 leading-relaxed text-center mt-1">
+					{latestUser.department.name}
 				</p>
-				    
-				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
-					{latestUser.id}
+				<p class="text-xl text-blue-900 leading-relaxed text-center mt-1">
+					{latestUser.course.name}
 				</p>
-				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black"></p> 
-				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
-					{loginLogoutTimestamp}
+				<p class="text-lg text-blue-900 leading-relaxed text-center mt-1">
+					ID: {latestUser.user.id}
+				</p>
+				<p class="text-lg text-blue-900 leading-relaxed text-center mt-1">
+					{latestUser.timestamp}
+				</p>
+				<p class="text-xl text-blue-900 leading-relaxed text-center mt-1 font-semibold">
+					{latestUser.isLoggedIn ? 'Logged In' : 'Logged Out'}
 				</p>
 			</div>
 		</Modal>

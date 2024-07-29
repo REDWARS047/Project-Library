@@ -7,6 +7,7 @@ export interface User {
     given_name: string;
     middle_name: string;
     photo_url: string;
+    course_id: number;
 }
 
 export interface UserSession {
@@ -17,3 +18,13 @@ export interface UserSession {
     session_duration: number | null;
 }
 
+export interface Department {
+    id: number;
+    name: string;
+}
+
+export interface Course {
+    id: number;
+    name: string;
+    department_id: number;
+}

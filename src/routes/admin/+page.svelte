@@ -62,9 +62,9 @@
 		}
 	}
 
-    const navigateToRegistration = () => {
-        goto('/Registration'); // Navigate to the registration page
-    };
+	const navigateToRegistration = () => {
+		goto('/registration'); // Navigate to the registration page
+	};
 
 	const updateDataAndPagination = () => {
 		renderPagination();

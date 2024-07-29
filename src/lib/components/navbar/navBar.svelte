@@ -9,7 +9,8 @@
 	<NavHamburger />
 	<NavUl>
 		<NavLi href="/">Home</NavLi>
-		<NavLi href="/reports">Reports</NavLi>
-		<NavLi href="/analytics">Admin</NavLi>
+		<NavLi href="/dashboard">Dashboard</NavLi>
+		<NavLi href="/admin">Admin</NavLi>
+		<!-- <NavLi href="/database">Database</NavLi> -->
 	</NavUl>
 </Navbar>
