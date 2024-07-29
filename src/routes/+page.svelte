@@ -63,6 +63,12 @@
 		isLoggedIn: boolean;
 	} | null = null;
 
+	$: if (latestUserSession && latestUser) {
+		latestUser.isLoggedIn =
+			latestUserSession.user_id === latestUser.user.id && !latestUserSession.logout_timestamp;
+		latestUser.timestamp = new Date(latestUserSession.login_timestamp).toLocaleString();
+	}
+
 	async function onLogin(event: CustomEvent<string>) {
 		const rfid = event.detail;
 		console.log('RFID received:', rfid);
@@ -74,8 +80,11 @@
 		loginMessage = message;
 		loginOutSuccessful = success;
 		console.log('Login result:', { message, success });
+
+		// Refresh user sessions and get the latest one
 		userSessions = await fetchUserSessions();
 		latestUserSession = getLatestUserSession(userSessions);
+
 		const loginLogoutTimestamp = new Date().toLocaleString();
 
 		if (success) {
@@ -86,7 +95,11 @@
 					await fetchUserDepartment(currentUserCourse.department_id)
 				)[0];
 
-				const isLoggedIn = !latestUserSession?.logout_timestamp;
+				// Determine if the user is logged in based on the latest session
+				const isLoggedIn =
+					latestUserSession &&
+					latestUserSession.user_id === currentUser.id &&
+					!latestUserSession.logout_timestamp;
 
 				latestUser = {
 					user: currentUser,
