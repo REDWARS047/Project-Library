@@ -16,14 +16,6 @@
 	export let users: User[] = [];
 	export let userSessions: UserSession[] = [];
 	let latestUserSession: UserSession | null = null;
-	let recentUsers: Array<{
-		user: User;
-		department: Department;
-		course: Course;
-		timestamp: string;
-		isLoggedIn: boolean;
-	}> = [];
-	const MAX_RECENT_USERS = 10; // Adjust this number as needed
 	let loginMessage = '';
 	let loginOutSuccessful = false;
 	let messageTimeoutId: string | number | NodeJS.Timeout | undefined;
