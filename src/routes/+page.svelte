@@ -115,11 +115,14 @@
 					<!-- {latestUser.middle_name} -->
 					<!-- {latestUser.last_name} -->
 				</p>
-				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">CCIS</p>
+				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
+					{latestUser.group}
+				</p>
+				    
 				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
 					{latestUser.id}
 				</p>
-				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">CS</p>
+				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black"></p> 
 				<p class="text-4xl text-blue-900 leading-relaxed text-center mt-1 font-black">
 					{loginLogoutTimestamp}
 				</p>

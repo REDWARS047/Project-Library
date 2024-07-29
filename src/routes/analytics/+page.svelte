@@ -25,6 +25,7 @@
 		ChevronLeftOutline
 	} from 'flowbite-svelte-icons';
 	import NavBar from '$lib/components/navbar/navBar.svelte';
+	import { goto } from '$app/navigation';
 
 	let divClass = 'bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden';
 	let innerDivClass =
@@ -47,19 +48,26 @@
 	let endPage: number[] = [];
 	let paginationData: User[] = [];
 	let selectedDepartments: string[] = [];
+	let selectedStudentTypes: string[] = [];
 	let selectedItems = new Set();
 
 	async function fetchData() {
 		try {
 			users = await fetchUsers();
+			paginationData = users;
+			totalItems = paginationData.length;
+			renderPagination();
 		} catch (error) {
 			console.error('Error refreshing data:', error);
 		}
 	}
 
+    const navigateToRegistration = () => {
+        goto('/Registration'); // Navigate to the registration page
+    };
+
 	const updateDataAndPagination = () => {
-		const currentPageItems = paginationData.slice(currentPosition, currentPosition + itemsPerPage);
-		renderPagination(currentPageItems.length);
+		renderPagination();
 	};
 
 	const loadNextPage = () => {
@@ -76,8 +84,8 @@
 		}
 	};
 
-	const renderPagination = (totalItems) => {
-		totalPages = Math.ceil(paginationData.length / itemsPerPage);
+	const renderPagination = () => {
+		totalPages = Math.ceil(filteredItems.length / itemsPerPage);
 		const currentPage = Math.ceil((currentPosition + 1) / itemsPerPage);
 
 		startPage = currentPage - Math.floor(showPage / 2);
@@ -100,15 +108,23 @@
 		}
 	};
 
-	// const deleteAllItems = async () => {
-	// 	// Example: Deleting all rows from Supabase
-	// 	const { error } = await supabase.from('students').delete().neq('id', '');
-	// 	if (error) {
-	// 		console.error('Error deleting all items:', error);
-	// 	}
-	// 	paginationData = [];
-	// 	updateDataAndPagination();
-	// };
+	const toggleStudentTypeFilter = (type) => {
+		if (selectedStudentTypes.includes(type)) {
+			selectedStudentTypes = selectedStudentTypes.filter((t) => t !== type);
+		} else {
+			selectedStudentTypes.push(type);
+		}
+	};
+
+	const deleteAllItems = async () => {
+		// Example: Deleting all rows from Supabase
+		const { error } = await supabase.from('students').delete().neq('id', '');
+		if (error) {
+			console.error('Error deleting all items:', error);
+		}
+		paginationData = [];
+		updateDataAndPagination();
+	};
 
 	const massEditItems = () => {
 		// Implement your mass edit logic here
@@ -127,16 +143,16 @@
 	$: endRange = Math.min(currentPosition + itemsPerPage, totalItems);
 
 	onMount(async () => {
-		paginationData = await fetchData();
-		totalItems = paginationData.length;
-		renderPagination(paginationData.length);
+		await fetchData();
 	});
 
 	$: filteredItems = paginationData.filter((item) => {
 		const matchesSearch = item.first_name.toLowerCase().includes(searchTerm.toLowerCase());
 		const matchesDepartment =
 			selectedDepartments.length === 0 || selectedDepartments.includes(item.department);
-		return matchesSearch && matchesDepartment;
+		const matchesStudentType =
+			selectedStudentTypes.length === 0 || selectedStudentTypes.includes(item.student_type);
+		return matchesSearch && matchesDepartment && matchesStudentType;
 	});
 
 	$: currentPageItems = filteredItems.slice(currentPosition, currentPosition + itemsPerPage);
@@ -161,6 +177,7 @@
 			<Button>
 				<PlusOutline class="h-3.5 w-3.5 mr-2" />Add student
 			</Button>
+			<Button color="alternative" on:click={navigateToRegistration}>Add New Student</Button>
 			<Button color="alternative">Actions<ChevronDownOutline class="w-3 h-3 ml-2 " /></Button>
 			<Dropdown class="w-44 divide-y divide-gray-100">
 				<DropdownItem on:click={massEditItems}>Mass Edit</DropdownItem>
@@ -185,12 +202,25 @@
 					<Checkbox on:change={() => toggleDepartmentFilter('ATYCB')}>ATYCB</Checkbox>
 				</li>
 			</Dropdown>
+			<Dropdown class="w-48 p-3 space-y-2 text-sm">
+				<h6 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Choose Student Type</h6>
+				<li>
+					<Checkbox on:change={() => toggleStudentTypeFilter('College')}>College</Checkbox>
+				</li>
+				<li>
+					<Checkbox on:change={() => toggleStudentTypeFilter('SHS')}>SHS</Checkbox>
+				</li>
+				<li>
+					<Checkbox on:change={() => toggleStudentTypeFilter('Staff')}>Staff</Checkbox>
+				</li>
+			</Dropdown>
 		</div>
 		<TableHead>
 			<TableHeadCell padding="px-4 py-3" scope="col">FirstName</TableHeadCell>
 			<TableHeadCell padding="px-4 py-3" scope="col">LastName</TableHeadCell>
 			<TableHeadCell padding="px-4 py-3" scope="col">StudentID</TableHeadCell>
 			<TableHeadCell padding="px-4 py-3" scope="col">Department</TableHeadCell>
+			<TableHeadCell padding="px-4 py-3" scope="col">Student-Type</TableHeadCell>
 			<TableHeadCell padding="px-4 py-3" scope="col">RFID-ID</TableHeadCell>
 			<TableHeadCell padding="px-4 py-3" scope="col">Time-IN</TableHeadCell>
 			<TableHeadCell padding="px-4 py-3" scope="col">Time-Out</TableHeadCell>
@@ -204,6 +234,7 @@
 						<TableBodyCell tdClass="px-4 py-3">{item.last_name}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.student_id}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.department}</TableBodyCell>
+						<TableBodyCell tdClass="px-4 py-3">{item.student_type}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.rfid_id}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.time_in}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.time_out}</TableBodyCell>
@@ -217,6 +248,7 @@
 						<TableBodyCell tdClass="px-4 py-3">{item.last_name}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.student_id}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.department}</TableBodyCell>
+						<TableBodyCell tdClass="px-4 py-3">{item.student_type}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.rfid_id}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.time_in}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.time_out}</TableBodyCell>
