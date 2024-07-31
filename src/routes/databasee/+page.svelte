@@ -96,12 +96,12 @@
 		pagesToShow = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
 	};
 
-	const goToPage = (pageNumber) => {
+	const goToPage = (pageNumber: number) => {
 		currentPosition = (pageNumber - 1) * itemsPerPage;
 		updateDataAndPagination();
 	};
 
-	const toggleDepartmentFilter = (department) => {
+	const toggleDepartmentFilter = (department: string) => {
 		if (selectedDepartments.includes(department)) {
 			selectedDepartments = selectedDepartments.filter((dept) => dept !== department);
 		} else {
@@ -109,7 +109,7 @@
 		}
 	};
 
-	const toggleStudentTypeFilter = (type) => {
+	const toggleStudentTypeFilter = (type: string) => {
 		if (selectedStudentTypes.includes(type)) {
 			selectedStudentTypes = selectedStudentTypes.filter((t) => t !== type);
 		} else {
@@ -132,7 +132,7 @@
 		alert('Mass Edit functionality is not implemented yet.');
 	};
 
-	const toggleItemSelection = (itemId) => {
+	const toggleItemSelection = (itemId: unknown) => {
 		if (selectedItems.has(itemId)) {
 			selectedItems.delete(itemId);
 		} else {
@@ -140,7 +140,7 @@
 		}
 	};
 
-	const deleteUserById = async (userId) => {
+	const deleteUserById = async (userId: string | number) => {
 		try {
 			await deleteUser(userId);
 			await fetchData();
@@ -149,7 +149,7 @@
 		}
 	};
 
-	const editUser = (user) => {
+	const editUser = (user: User) => {
 		// Implement your edit logic here
 		alert('Edit functionality is not implemented yet.');
 	};
