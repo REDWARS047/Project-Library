@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { Card } from 'flowbite-svelte';
 	import NavBar from '$lib/components/navbar/navBar.svelte';
+	import { fetchUserDepartment, fetchUserCourse, handleUserLogin, fetchUsers, fetchUserSessions } from '$lib/service/supabaseService';
+	import { updateAttendanceData, getTotalAttendance, getAttendanceData } from '$lib/service/attendanceData';
+	import type { User, UserSession } from '$lib/usertypes';
 
 	const colleges = [
 		{ name: 'CAS', departments: ['COMM', 'MMA'] },
@@ -10,17 +13,43 @@
 		{ name: 'CEA', departments: ['AR', 'ChE', 'CE', 'CpE', 'EE', 'Ece', 'IE', 'ME'] }
 	];
 
-	const attendanceData = {
-		CAS: { COMM: 0, MMA: 0 },
-		CHS: { PT: 0, PH: 0, PSY: 0, BIO: 0 },
-		ATYCB: { ENT: 0, ACT: 0, MA: 0, TM: 0, REM: 0 },
-		CCIS: { EMC: 0, CS: 0, IS: 0 },
-		CEA: { AR: 0, ChE: 0, CE: 0, CpE: 0, EE: 0, Ece: 0, IE: 0, ME: 0 }
-	};
+	let attendanceData = getAttendanceData();
+	let totalAttendance = getTotalAttendance();
 
-	const totalAttendance = Object.values(attendanceData).reduce((total, dept) => {
-		return total + Object.values(dept).reduce((subTotal, value) => subTotal + value, 0);
-	}, 0);
+	async function updateAttendance(rfid: string, users: User[], userSessions: UserSession[]) {
+		console.log('Attempting to update attendance for RFID:', rfid);
+		const userLogin = await handleUserLogin(rfid, users, userSessions);
+		console.log('Login result:', userLogin);
+		if (userLogin.success) {
+			const user = users.find(u => u.rfid === rfid);
+			if (user) {
+				const course = (await fetchUserCourse(user.course_id))[0];
+				const department = course ? (await fetchUserDepartment(course.department_id))[0] : undefined;
+				console.log('Fetched Course:', course);
+				console.log('Fetched Department:', department);
+				if (department && course) {
+					updateAttendanceData(department.name, course.name);
+					attendanceData = getAttendanceData(); // Refresh local copy
+					totalAttendance = getTotalAttendance();
+					console.log('Updated attendanceData:', attendanceData);
+				} else {
+					console.error('Department or Course not found for user:', user);
+				}
+			} else {
+				console.error('User not found for RFID:', rfid);
+			}
+		} else {
+			console.error('User login failed:', userLogin.message);
+		}
+	}
+
+	// Example function to simulate a user login
+	async function simulateLogin() {
+		const rfid = '0490708168'; // Replace with a test RFID
+		const users = await fetchUsers();
+		const userSessions = await fetchUserSessions();
+		await updateAttendance(rfid, users, userSessions);
+	}
 </script>
 
 <NavBar />
@@ -55,3 +84,6 @@
 		</div>
 	{/each}
 </Card>
+
+<!-- Test button to simulate login -->
+<button on:click={simulateLogin} class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Simulate Login</button>

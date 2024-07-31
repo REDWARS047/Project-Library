@@ -11,6 +11,6 @@
 		<NavLi href="/">Home</NavLi>
 		<NavLi href="/dashboard">Dashboard</NavLi>
 		<NavLi href="/admin">Admin</NavLi>
-		<!-- <NavLi href="/database">Database</NavLi> -->
+		<NavLi href="/databasee">Database</NavLi>
 	</NavUl>
 </Navbar>
