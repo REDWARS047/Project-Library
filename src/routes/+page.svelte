@@ -9,19 +9,23 @@
 		fetchUserCourse
 	} from '$lib/service/supabaseService';
 	import LoginInput from '$lib/components/rfid/RFIDInput.svelte';
-	import LoginMessage from '$lib/components/rfid/RFIDMessage.svelte';
+	// import LoginMessage from '$lib/components/rfid/RFIDMessage.svelte';
 	import { goto } from '$app/navigation';
 	import { Modal } from 'flowbite-svelte';
+	import { fade, scale } from 'svelte/transition';
 
 	export let users: User[] = [];
 	export let userSessions: UserSession[] = [];
 	let latestUserSession: UserSession | null = null;
-	let loginMessage = '';
-	let loginOutSuccessful = false;
-	let messageTimeoutId: string | number | NodeJS.Timeout | undefined;
+	// let loginMessage = '';
+	// let loginOutSuccessful = false;
+	// let messageTimeoutId: string | number | NodeJS.Timeout | undefined;
 	let intervalId: ReturnType<typeof setInterval>;
 	let defaultModal = false;
 	let modalTimeoutId: string | number | NodeJS.Timeout | undefined;
+	let isLoginFailed = false;
+	let errorMessage = 'Invalid ID. Please try again.';
+	let modalKey = 0; // Add this line
 
 	async function refreshData() {
 		try {
@@ -74,13 +78,20 @@
 		console.log('RFID received:', rfid);
 		if (rfid.length !== 10) {
 			console.warn('Invalid RFID length');
+			isLoginFailed = true;
+			errorMessage = 'Invalid ID length. Please try again.';
 			return;
 		}
 		const { message, success } = await handleUserLogin(rfid, users, userSessions);
-		loginMessage = message;
-		loginOutSuccessful = success;
 		console.log('Login result:', { message, success });
 
+		if (!success) {
+			isLoginFailed = true;
+			errorMessage = message;
+			return;
+		}
+
+		isLoginFailed = false;
 		// Refresh user sessions and get the latest one
 		userSessions = await fetchUserSessions();
 		latestUserSession = getLatestUserSession(userSessions);
@@ -118,13 +129,13 @@
 			}
 		}
 
-		if (messageTimeoutId) {
-			clearTimeout(messageTimeoutId);
-		}
-		messageTimeoutId = setTimeout(() => {
-			loginMessage = '';
-			loginOutSuccessful = false;
-		}, 2000);
+		// if (messageTimeoutId) {
+		// 	clearTimeout(messageTimeoutId);
+		// }
+		// messageTimeoutId = setTimeout(() => {
+		// 	loginMessage = '';
+		// 	loginOutSuccessful = false;
+		// }, 2000);
 
 		// Show the modal on successful login/logout
 		if (success) {
@@ -134,59 +145,125 @@
 			}
 			modalTimeoutId = setTimeout(() => {
 				defaultModal = false;
-			}, 2000);
+			}, 1500);
 		}
 	}
 
-	function navigateTo() {
-		console.log('Navigating to dashboard');
-		goto('/dashboard');
+	// function navigateTo() {
+	// 	console.log('Navigating to dashboard');
+	// 	goto('/dashboard');
+	// }
+
+	let inputElement: HTMLInputElement | null = null;
+
+	function focusInput() {
+		if (inputElement) {
+			inputElement.focus();
+		}
+	}
+
+	$: if (defaultModal === false) {
+		// Use setTimeout to delay the focus until after the modal has fully closed
+		setTimeout(focusInput, 0);
 	}
 </script>
 
-<div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-900">
-	<div class="w-full max-w-md p-8 bg-white shadow-md rounded-md">
-		<h1 class="text-4xl text-blue-900 font-black mb-6 text-center">WELCOME BACK</h1>
-		<LoginInput on:login={onLogin} />
-		{#if loginMessage}
-			<LoginMessage {loginMessage} {loginOutSuccessful} />
-		{/if}
-		<button
-			class="mt-6 w-full py-2 bg-blue-900 text-white rounded-md hover:bg-red-600 transition-colors"
-			on:click={navigateTo}
+<img src="decorative-tab.png" alt="decorative header" class="w-full h-auto" />
+
+<div class="min-h-screen bg-custom flex flex-col">
+	<div class="w-full p-4 flex justify-between items-start">
+		<img
+			src="mmcm-logo.png"
+			alt="mmcm-logo"
+			class="w-1/4 max-w-[600px] min-w-[100px] h-auto ml-auto"
+		/>
+		<h1
+			class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl text-blue-900 font-bold m-auto text-center"
 		>
-			Go to Dashboard
-		</button>
+			MMCM Library Sign-in
+		</h1>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			fill="none"
+			viewBox="0 0 24 24"
+			stroke-width="1.5"
+			stroke="currentColor"
+			class="w-[4vw] h-[4vw] max-w-[60px] max-h-[60px] min-w-[12px] min-h-[12px] mr-auto mt-2"
+		>
+			<path
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+			/>
+		</svg>
 	</div>
 
-	{#if latestUser}
-		<Modal class="bg-white rounded-lg shadow-lg" bind:open={defaultModal}>
-			<div class="flex flex-col items-center justify-center p-4">
-				<img
-					src={latestUser.user.photo_url}
-					alt="{latestUser.user.given_name}'s photo"
-					class="w-32 h-32 object-cover rounded-full mb-4"
-				/>
-				<p class="text-2xl text-blue-900 leading-relaxed text-center mt-1 font-black">
-					{latestUser.user.given_name}
-					{latestUser.user.last_name}
-				</p>
-				<p class="text-xl text-blue-900 leading-relaxed text-center mt-1">
-					{latestUser.department.name}
-				</p>
-				<p class="text-xl text-blue-900 leading-relaxed text-center mt-1">
-					{latestUser.course.name}
-				</p>
-				<p class="text-lg text-blue-900 leading-relaxed text-center mt-1">
-					ID: {latestUser.user.id}
-				</p>
-				<p class="text-lg text-blue-900 leading-relaxed text-center mt-1">
-					{latestUser.timestamp}
-				</p>
-				<p class="text-xl text-blue-900 leading-relaxed text-center mt-1 font-semibold">
-					{latestUser.isLoggedIn ? 'Logged In' : 'Logged Out'}
-				</p>
+	<div class="flex-grow flex items-center justify-center">
+		<div class="flex flex-col items-center w-full max-w-3xl">
+			<LoginInput on:login={onLogin} bind:inputElement {isLoginFailed} {errorMessage} />
+
+			<!-- {#if loginMessage}
+				<LoginMessage {loginMessage} {loginOutSuccessful} />
+			{/if} -->
+		</div>
+	</div>
+
+	{#key modalKey}
+		{#if latestUser && defaultModal}
+			<div in:fade={{ duration: 100, delay: 0 }} out:fade={{ duration: 100 }}>
+				<Modal
+					class="bg-white rounded-xl shadow-2xl max-w-3xl mx-auto"
+					bind:open={defaultModal}
+					on:close={() => {
+						modalKey += 1;
+					}}
+				>
+					<div
+						class="flex flex-col items-center justify-center p-8"
+						in:scale={{ duration: 100, delay: 0, start: 0.95 }}
+						out:scale={{ duration: 100, start: 0.95 }}
+					>
+						<img
+							src={latestUser.user.photo_url}
+							alt="{latestUser.user.given_name}'s photo"
+							class="w-48 h-48 object-cover rounded-full mb-6 border-4 border-blue-900"
+						/>
+						<p class="text-4xl text-blue-900 leading-relaxed text-center mt-2 font-black">
+							{latestUser.user.given_name}
+							{latestUser.user.last_name}
+						</p>
+						<p class="text-2xl text-blue-900 leading-relaxed text-center mt-2">
+							{latestUser.department.name}
+						</p>
+						<p class="text-2xl text-blue-900 leading-relaxed text-center mt-2">
+							{latestUser.course.name}
+						</p>
+						<p class="text-xl text-blue-900 leading-relaxed text-center mt-3">
+							ID: {latestUser.user.id}
+						</p>
+						<p class="text-xl text-blue-900 leading-relaxed text-center mt-2">
+							{latestUser.timestamp}
+						</p>
+						<p class="text-3xl text-blue-900 leading-relaxed text-center mt-4 font-semibold">
+							{latestUser.isLoggedIn ? 'Logged In' : 'Logged Out'}
+						</p>
+					</div>
+				</Modal>
 			</div>
-		</Modal>
-	{/if}
+		{/if}
+	{/key}
+
+	<div class="w-full flex justify-between items-end p-4">
+		<img
+			src="clir-logo.png"
+			alt="clir logo"
+			class="w-1/4 max-w-[400px] min-w-[100px] h-auto mb-32 ml-32"
+		/>
+		<div class="flex-grow"></div>
+		<img
+			src="ccis-logo.png"
+			alt="ccis logo"
+			class="w-1/16 max-w-[150px] min-w-[60px] h-auto mb-24 mr-12"
+		/>
+	</div>
 </div>

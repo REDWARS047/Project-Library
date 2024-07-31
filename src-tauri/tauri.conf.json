@@ -19,9 +19,12 @@
     },
     "windows": [
       {
-        "title": "Library",
-        "width": 800,
-        "height": 600
+        "maximized": true,
+        "title": "MMCM Library",
+        "width": 1920,
+        "height": 1080,
+        "minWidth": 1280,
+        "minHeight": 720
       }
     ],
     "security": {
