@@ -16,8 +16,8 @@
 	} from 'flowbite-svelte';
 	import { Section } from 'flowbite-svelte-blocks';
 	import type { User } from '$lib/usertypes';
-	import type {UserSession} from '$lib/usertypes';
-	import { fetchUsers } from '$lib/service/supabaseService';
+	import type { UserSession } from '$lib/usertypes';
+	import { fetchUsers, deleteUser, updateUser } from '$lib/service/supabaseService';
 	import {
 		PlusOutline,
 		ChevronDownOutline,
@@ -96,12 +96,12 @@
 		pagesToShow = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
 	};
 
-	const goToPage = (pageNumber) => {
+	const goToPage = (pageNumber: number) => {
 		currentPosition = (pageNumber - 1) * itemsPerPage;
 		updateDataAndPagination();
 	};
 
-	const toggleDepartmentFilter = (department) => {
+	const toggleDepartmentFilter = (department: string) => {
 		if (selectedDepartments.includes(department)) {
 			selectedDepartments = selectedDepartments.filter((dept) => dept !== department);
 		} else {
@@ -109,7 +109,7 @@
 		}
 	};
 
-	const toggleStudentTypeFilter = (type) => {
+	const toggleStudentTypeFilter = (type: string) => {
 		if (selectedStudentTypes.includes(type)) {
 			selectedStudentTypes = selectedStudentTypes.filter((t) => t !== type);
 		} else {
@@ -132,12 +132,26 @@
 		alert('Mass Edit functionality is not implemented yet.');
 	};
 
-	const toggleItemSelection = (itemId) => {
+	const toggleItemSelection = (itemId: unknown) => {
 		if (selectedItems.has(itemId)) {
 			selectedItems.delete(itemId);
 		} else {
 			selectedItems.add(itemId);
 		}
+	};
+
+	const deleteUserById = async (userId: string | number) => {
+		try {
+			await deleteUser(userId);
+			await fetchData();
+		} catch (error) {
+			console.error('Error deleting user:', error);
+		}
+	};
+
+	const editUser = (user: User) => {
+		// Implement your edit logic here
+		alert('Edit functionality is not implemented yet.');
 	};
 
 	$: startRange = currentPosition + 1;
@@ -217,43 +231,46 @@
 			</Dropdown>
 		</div>
 		<TableHead>
-			<TableHeadCell padding="px-4 py-3" scope="col">FirstName</TableHeadCell>
-			<TableHeadCell padding="px-4 py-3" scope="col">LastName</TableHeadCell>
-			<TableHeadCell padding="px-4 py-3" scope="col">StudentID</TableHeadCell>
+			<TableHeadCell padding="px-4 py-3" scope="col">First Name</TableHeadCell>
+			<TableHeadCell padding="px-4 py-3" scope="col">Middle Name</TableHeadCell>
+			<TableHeadCell padding="px-4 py-3" scope="col">Last Name</TableHeadCell>
+			<TableHeadCell padding="px-4 py-3" scope="col">Student ID</TableHeadCell>
 			<TableHeadCell padding="px-4 py-3" scope="col">Department</TableHeadCell>
-			<TableHeadCell padding="px-4 py-3" scope="col">Student-Type</TableHeadCell>
-			<TableHeadCell padding="px-4 py-3" scope="col">RFID-ID</TableHeadCell>
-			<TableHeadCell padding="px-4 py-3" scope="col">Time-IN</TableHeadCell>
-			<TableHeadCell padding="px-4 py-3" scope="col">Time-Out</TableHeadCell>
-			<TableHeadCell padding="px-4 py-3" scope="col">Date</TableHeadCell>
+			<TableHeadCell padding="px-4 py-3" scope="col">Student Type</TableHeadCell>
+			<TableHeadCell padding="px-4 py-3" scope="col">RFID ID</TableHeadCell>
+			<TableHeadCell padding="px-4 py-3" scope="col">Actions</TableHeadCell>
 		</TableHead>
 		<TableBody class="divide-y">
 			{#if searchTerm !== ''}
 				{#each filteredItems as item (item.id)}
 					<TableBodyRow>
-						<TableBodyCell tdClass="px-4 py-3">{item.given_name}</TableBodyCell>
+						<TableBodyCell tdClass="px-4 py-3">{item.first_name}</TableBodyCell>
+						<TableBodyCell tdClass="px-4 py-3">{item.middle_name}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.last_name}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.id}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.department}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.student_type}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.rfid_id}</TableBodyCell>
-						<TableBodyCell tdClass="px-4 py-3">{item.time_in}</TableBodyCell>
-						<TableBodyCell tdClass="px-4 py-3">{item.time_out}</TableBodyCell>
-						<TableBodyCell tdClass="px-4 py-3">{item.date}</TableBodyCell>
+						<TableBodyCell tdClass="px-4 py-3">
+							<Button on:click={() => editUser(item)}>Edit</Button>
+							<Button on:click={() => deleteUserById(item.id)}>Delete</Button>
+						</TableBodyCell>
 					</TableBodyRow>
 				{/each}
 			{:else}
 				{#each currentPageItems as item (item.id)}
 					<TableBodyRow>
-						<TableBodyCell tdClass="px-4 py-3">{item.given_name}</TableBodyCell>
+						<TableBodyCell tdClass="px-4 py-3">{item.first_name}</TableBodyCell>
+						<TableBodyCell tdClass="px-4 py-3">{item.middle_name}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.last_name}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.id}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.department}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.student_type}</TableBodyCell>
 						<TableBodyCell tdClass="px-4 py-3">{item.rfid_id}</TableBodyCell>
-						<TableBodyCell tdClass="px-4 py-3">{item.time_in}</TableBodyCell>
-						<TableBodyCell tdClass="px-4 py-3">{item.time_out}</TableBodyCell>
-						<TableBodyCell tdClass="px-4 py-3">{item.date}</TableBodyCell>
+						<TableBodyCell tdClass="px-4 py-3">
+							<Button on:click={() => editUser(item)}>Edit</Button>
+							<Button on:click={() => deleteUserById(item.id)}>Delete</Button>
+						</TableBodyCell>
 					</TableBodyRow>
 				{/each}
 			{/if}

@@ -36,13 +36,14 @@ export async function fetchUserSessions(): Promise<UserSession[]> {
 }
 
 
-export async function fetchUserDepartment(id: number): Promise<Department[]> {
+export async function fetchUserDepartment(department_id: number): Promise<Department[]> {
 	try {
-		const { data, error } = await supabase.from('departments').select().eq('id', id);
+		const { data, error } = await supabase.from('departments').select().eq('id', department_id);
 		if (error) {
 			console.error('Error fetching departments:', error);
 			return [];
 		}
+		console.log('Fetched Department Data:', data);
 		return data || [];
 	} catch (error) {
 		console.error('Error fetching departments:', error);
@@ -50,13 +51,14 @@ export async function fetchUserDepartment(id: number): Promise<Department[]> {
 	}
 }
 
-export async function fetchUserCourse(id: number): Promise<Course[]> {
+export async function fetchUserCourse(course_id: number): Promise<Course[]> {
 	try {
-		const { data, error } = await supabase.from('courses').select().eq('id', id);
+		const { data, error } = await supabase.from('courses').select().eq('id', course_id);
 		if (error) {
 			console.error('Error fetching courses:', error);
 			return [];
 		}
+		console.log('Fetched Course Data:', data);
 		return data || [];
 	} catch (error) {
 		console.error('Error fetching courses:', error);
@@ -184,3 +186,13 @@ function getTapMessage(tapCount: number): string {
 			return 'This user has already logged in/out recently. Please wait a few seconds.';
 	}
 }
+
+export const deleteUser = async (userId: string) => {
+	const { error } = await supabase.from('students').delete().eq('id', userId);
+	if (error) throw error;
+};
+
+export const updateUser = async (user : User) => {
+	const { error } = await supabase.from('students').update(user).eq('id', user.id);
+	if (error) throw error;
+};
