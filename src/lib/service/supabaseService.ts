@@ -2,7 +2,7 @@ import { supabase } from '$lib/supabaseClient';
 import type { User, UserSession, Department, Course} from '$lib/usertypes';
 
 const recentLogins = new Map<string, number>();
-const COOLDOWN_PERIOD = 5000; // 5 seconds in milliseconds
+const COOLDOWN_PERIOD = 2000; // 5 seconds in milliseconds
 
 function convertToLocalTime(utcTimestamp: string): Date {
     return new Date(utcTimestamp);
