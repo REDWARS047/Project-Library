@@ -10,7 +10,6 @@
 	} from '$lib/service/supabaseService';
 	import LoginInput from '$lib/components/rfid/RFIDInput.svelte';
 	import { Modal } from 'flowbite-svelte';
-	import { fade, scale } from 'svelte/transition';
 	import LoginModal from '$lib/components/login/loginModal.svelte';
 	import { modalOpen } from '$lib/components/login/modalStore';
 
@@ -211,46 +210,40 @@
 
 	{#key modalKey}
 		{#if latestUser && defaultModal}
-			<div in:fade={{ duration: 100 }} out:fade={{ duration: 100 }}>
-				<Modal
-					class="bg-white rounded-xl shadow-2xl max-w-3xl mx-auto"
-					bind:open={defaultModal}
-					on:close={() => {
-						modalKey += 1;
-					}}
-				>
-					<div
-						class="flex flex-col items-center justify-center p-8"
-						in:scale={{ duration: 100, delay: 0, start: 0.95 }}
-						out:scale={{ duration: 100, start: 0.95 }}
-					>
-						<img
-							src={latestUser.user.photo_url}
-							alt="{latestUser.user.given_name}'s photo"
-							class="w-48 h-48 object-cover rounded-full mb-6 border-4 border-blue-900"
-						/>
-						<p class="text-4xl text-blue-900 leading-relaxed text-center mt-2 font-black">
-							{latestUser.user.given_name}
-							{latestUser.user.last_name}
-						</p>
-						<p class="text-2xl text-blue-900 leading-relaxed text-center mt-2">
-							{latestUser.department.name}
-						</p>
-						<p class="text-2xl text-blue-900 leading-relaxed text-center mt-2">
-							{latestUser.course.name}
-						</p>
-						<p class="text-xl text-blue-900 leading-relaxed text-center mt-3">
-							ID: {latestUser.user.id}
-						</p>
-						<p class="text-xl text-blue-900 leading-relaxed text-center mt-2">
-							{latestUser.timestamp}
-						</p>
-						<p class="text-3xl text-blue-900 leading-relaxed text-center mt-4 font-semibold">
-							{latestUser.isLoggedIn ? 'Logged In' : 'Logged Out'}
-						</p>
-					</div>
-				</Modal>
-			</div>
+			<Modal
+				class="bg-white rounded-xl shadow-2xl max-w-3xl mx-auto"
+				bind:open={defaultModal}
+				on:close={() => {
+					modalKey += 1;
+				}}
+			>
+				<div class="flex flex-col items-center justify-center p-8">
+					<img
+						src={latestUser.user.photo_url}
+						alt="{latestUser.user.given_name}'s photo"
+						class="w-48 h-48 object-cover rounded-full mb-6 border-4 border-blue-900"
+					/>
+					<p class="text-4xl text-blue-900 leading-relaxed text-center mt-2 font-black">
+						{latestUser.user.given_name}
+						{latestUser.user.last_name}
+					</p>
+					<p class="text-2xl text-blue-900 leading-relaxed text-center mt-2">
+						{latestUser.department.name}
+					</p>
+					<p class="text-2xl text-blue-900 leading-relaxed text-center mt-2">
+						{latestUser.course.name}
+					</p>
+					<p class="text-xl text-blue-900 leading-relaxed text-center mt-3">
+						ID: {latestUser.user.id}
+					</p>
+					<p class="text-xl text-blue-900 leading-relaxed text-center mt-2">
+						{latestUser.timestamp}
+					</p>
+					<p class="text-3xl text-blue-900 leading-relaxed text-center mt-4 font-semibold">
+						{latestUser.isLoggedIn ? 'Logged In' : 'Logged Out'}
+					</p>
+				</div>
+			</Modal>
 		{/if}
 	{/key}
 
