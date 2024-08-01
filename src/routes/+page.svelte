@@ -9,23 +9,30 @@
 		fetchUserCourse
 	} from '$lib/service/supabaseService';
 	import LoginInput from '$lib/components/rfid/RFIDInput.svelte';
-	// import LoginMessage from '$lib/components/rfid/RFIDMessage.svelte';
-	import { goto } from '$app/navigation';
 	import { Modal } from 'flowbite-svelte';
 	import { fade, scale } from 'svelte/transition';
+	import LoginModal from '$lib/components/login/loginModal.svelte';
+	import { modalOpen } from '$lib/components/login/modalStore';
 
 	export let users: User[] = [];
 	export let userSessions: UserSession[] = [];
 	let latestUserSession: UserSession | null = null;
-	// let loginMessage = '';
-	// let loginOutSuccessful = false;
-	// let messageTimeoutId: string | number | NodeJS.Timeout | undefined;
 	let intervalId: ReturnType<typeof setInterval>;
 	let defaultModal = false;
 	let modalTimeoutId: string | number | NodeJS.Timeout | undefined;
 	let isLoginFailed = false;
-	let errorMessage = 'Invalid ID. Please try again.';
-	let modalKey = 0; // Add this line
+	let modalKey = 0;
+
+	function handleClick() {
+		$modalOpen = true;
+	}
+
+	function handleKeyDown(event: KeyboardEvent) {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			handleClick();
+		}
+	}
 
 	async function refreshData() {
 		try {
@@ -79,7 +86,7 @@
 		if (rfid.length !== 10) {
 			console.warn('Invalid RFID length');
 			isLoginFailed = true;
-			errorMessage = 'Invalid ID length. Please try again.';
+			// errorMessage = 'Invalid ID length. Please try again.';
 			return;
 		}
 		const { message, success } = await handleUserLogin(rfid, users, userSessions);
@@ -87,7 +94,7 @@
 
 		if (!success) {
 			isLoginFailed = true;
-			errorMessage = message;
+			// errorMessage = message;
 			return;
 		}
 
@@ -117,7 +124,7 @@
 					department: currentUserDepartment,
 					course: currentUserCourse,
 					timestamp: loginLogoutTimestamp,
-					isLoggedIn: isLoggedIn
+					isLoggedIn: isLoggedIn ?? false
 				};
 
 				console.log('Current user details:', {
@@ -128,14 +135,6 @@
 				});
 			}
 		}
-
-		// if (messageTimeoutId) {
-		// 	clearTimeout(messageTimeoutId);
-		// }
-		// messageTimeoutId = setTimeout(() => {
-		// 	loginMessage = '';
-		// 	loginOutSuccessful = false;
-		// }, 2000);
 
 		// Show the modal on successful login/logout
 		if (success) {
@@ -189,6 +188,11 @@
 			stroke-width="1.5"
 			stroke="currentColor"
 			class="w-[4vw] h-[4vw] max-w-[60px] max-h-[60px] min-w-[12px] min-h-[12px] mr-auto mt-2"
+			on:click={handleClick}
+			on:keydown={handleKeyDown}
+			tabindex="0"
+			role="button"
+			aria-label="Login"
 		>
 			<path
 				stroke-linecap="round"
@@ -196,21 +200,18 @@
 				d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
 			/>
 		</svg>
+		<LoginModal />
 	</div>
 
 	<div class="flex-grow flex items-center justify-center">
 		<div class="flex flex-col items-center w-full max-w-3xl">
-			<LoginInput on:login={onLogin} bind:inputElement {isLoginFailed} {errorMessage} />
-
-			<!-- {#if loginMessage}
-				<LoginMessage {loginMessage} {loginOutSuccessful} />
-			{/if} -->
+			<LoginInput on:login={onLogin} bind:inputElement {isLoginFailed} />
 		</div>
 	</div>
 
 	{#key modalKey}
 		{#if latestUser && defaultModal}
-			<div in:fade={{ duration: 100, delay: 0 }} out:fade={{ duration: 100 }}>
+			<div in:fade={{ duration: 100 }} out:fade={{ duration: 100 }}>
 				<Modal
 					class="bg-white rounded-xl shadow-2xl max-w-3xl mx-auto"
 					bind:open={defaultModal}

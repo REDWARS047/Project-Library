@@ -169,17 +169,17 @@ function formatDuration(durationMs: number): string {
     return `${durationHours} hour${durationHours !== 1 ? 's' : ''} ${durationMinutes} minute${durationMinutes !== 1 ? 's' : ''} ${durationSeconds} second${durationSeconds !== 1 ? 's' : ''}`;
 }
 
-function getTapMessage(tapCount: number): string {
-    switch (tapCount) {
-        case 2:
-            return 'Please wait a few seconds...';
-        case 3:
-            return 'Still processing, please be patient...';
-        case 4:
-            return 'Too many attempts! YAWA PAG HULAT';
-        case 6:
-            return 'Pisti ay!';
-        default:
-            return 'This user has already logged in/out recently. Please wait a few seconds.';
-    }
-}
+// function getTapMessage(tapCount: number): string {
+//     switch (tapCount) {
+//         case 2:
+//             return 'Please wait a few seconds...';
+//         case 3:
+//             return 'Still processing, please be patient...';
+//         case 4:
+//             return 'Too many attempts! YAWA PAG HULAT';
+//         case 6:
+//             return 'Pisti ay!';
+//         default:
+//             return 'This user has already logged in/out recently. Please wait a few seconds.';
+//     }
+// }
