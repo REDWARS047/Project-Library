@@ -28,3 +28,18 @@ export interface Course {
     name: string;
     department_id: number;
 }
+
+export interface CombinedUserData {
+    given_name: string;
+    last_name: string;
+    student_id: number;
+    department: string;
+    student_type: string;
+    rfid_id: string;
+    time_in: string | null;
+    time_out: string | null;
+    date: string;
+    course_id: number;
+    course_name: string; // Add this line
+
+}
