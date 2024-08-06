@@ -1,198 +1,269 @@
 import { supabase } from '$lib/supabaseClient';
-import type { User, UserSession, Department, Course} from '$lib/usertypes';
+import type { User, UserSession, CombinedUserData, Department, Course } from '$lib/usertypes';
 
-let recentLogins = new Map<string, { timestamp: number; tapCount: number }>();
-
-function convertToLocalTime(utcTimestamp: string): Date {
-	return new Date(utcTimestamp);
-}
-
-export async function fetchUsers(): Promise<User[]> {
-	try {
-		const { data, error } = await supabase.from('users').select();
-		if (error) {
-			console.error('Error fetching users:', error);
-			return [];
-		}
-		return data || [];
-	} catch (error) {
-		console.error('Error fetching users:', error);
-		return [];
-	}
-}
-
-export async function fetchUserSessions(): Promise<UserSession[]> {
-	try {
-		const { data, error } = await supabase.from('user_sessions').select();
-		if (error) {
-			console.error('Error fetching user sessions:', error);
-			return [];
-		}
-		return data || [];
-	} catch (error) {
-		console.error('Error fetching user sessions:', error);
-		return [];
-	}
-}
-
-
-export async function fetchUserDepartment(department_id: number): Promise<Department[]> {
-	try {
-		const { data, error } = await supabase.from('departments').select().eq('id', department_id);
-		if (error) {
-			console.error('Error fetching departments:', error);
-			return [];
-		}
-		console.log('Fetched Department Data:', data);
-		return data || [];
-	} catch (error) {
-		console.error('Error fetching departments:', error);
-		return [];
-	}
-}
-
-export async function fetchUserCourse(course_id: number): Promise<Course[]> {
-	try {
-		const { data, error } = await supabase.from('courses').select().eq('id', course_id);
-		if (error) {
-			console.error('Error fetching courses:', error);
-			return [];
-		}
-		console.log('Fetched Course Data:', data);
-		return data || [];
-	} catch (error) {
-		console.error('Error fetching courses:', error);
-		return [];
-	}
-}
-
-export async function handleUserLogin(rfid: string, users: User[], userSessions: UserSession[]) {
-	const currentTime = Date.now();
-	const recentEntry = recentLogins.get(rfid);
-
-	if (recentEntry && currentTime - recentEntry.timestamp < 5000) {
-		recentEntry.tapCount++;
-		return {
-			message: getTapMessage(recentEntry.tapCount),
-			success: false
-		};
-	}
-
-	recentLogins.set(rfid, { timestamp: currentTime, tapCount: 1 });
-
-	const user = users.find((u) => u.rfid === rfid);
-	if (!user) {
-		return {
-			message: 'User not found!',
-			success: false
-		};
-	}
-
-	const currentDateTime = new Date();
-	const existingSession = userSessions.find(
-		(session) => session.user_id === user.id && session.logout_timestamp === null
-	);
-
-	try {
-		if (existingSession) {
-			await logoutUser(existingSession, user, currentDateTime);
-		} else {
-			await loginUser(user, currentDateTime);
-		}
-		return {
-			message: existingSession
-				? `Goodbye, ${user.given_name} ${user.last_name}.`
-				: `Welcome, ${user.given_name} ${user.last_name}.`,
-			success: true
-		};
-	} catch (error) {
-		console.error('Error handling user login:', error);
-		return {
-			message: 'An error occurred. Please try again.',
-			success: false
-		};
-	} finally {
-		setTimeout(() => recentLogins.delete(rfid), 7000);
-	}
-}
-
-async function loginUser(user: User, currentTime: Date) {
-	try {
-		const loginTime = currentTime.toLocaleString();
-		const { error } = await supabase.from('user_sessions').insert([
-			{
-				user_id: user.id,
-				login_timestamp: loginTime,
-				logout_timestamp: null,
-				session_duration: null
-			}
-		]);
-
-		if (error) {
-			console.error('Error logging in user:', error);
-			throw new Error(error.message);
-		}
-	} catch (error) {
-		console.error('Error logging in user:', error);
-		throw error;
-	}
-}
-
-async function logoutUser(session: UserSession, user: User, currentTime: Date) {
-	try {
-		const sessionId = session.session_id;
-		const logoutTimeString = currentTime.toLocaleString();
-		const loginTime = convertToLocalTime(session.login_timestamp);
-		const formattedDuration = formatDuration(currentTime.getTime() - loginTime.getTime());
-
-		const { error } = await supabase
-			.from('user_sessions')
-			.update({
-				logout_timestamp: logoutTimeString,
-				session_duration: formattedDuration
-			})
-			.eq('session_id', sessionId);
-
-		if (error) {
-			console.error('Error logging out user:', error);
-			throw new Error(error.message);
-		}
-	} catch (error) {
-		console.error('Error logging out user:', error);
-		throw error;
-	}
-}
-
-function formatDuration(durationMs: number): string {
-	const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
-	const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-	const durationSeconds = Math.floor((durationMs % (1000 * 60)) / 1000);
-
-
-	return `${durationHours} hour${durationHours !== 1 ? 's' : ''} ${durationMinutes} minute${durationMinutes !== 1 ? 's' : ''} ${durationSeconds} second${durationSeconds !== 1 ? 's' : ''}`;
-}
-
-function getTapMessage(tapCount: number): string {
-	switch (tapCount) {
-		case 2:
-			return 'Please wait a few seconds...';
-		case 3:
-			return 'Still processing, please be patient...';
-		case 4:
-			return 'Too many attempts! YAWA PAG HULAT';
-		case 6:
-			return 'Pisti ay!';
-		default:
-			return 'This user has already logged in/out recently. Please wait a few seconds.';
-	}
-}
-
-export const deleteUser = async (userId: string) => {
-	const { error } = await supabase.from('students').delete().eq('id', userId);
-	if (error) throw error;
+// Fetch all users
+export const fetchUsers = async (): Promise<User[]> => {
+    try {
+        const { data, error } = await supabase.from('users').select('*');
+        if (error) {
+            throw error;
+        }
+        return data as User[];
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        return [];
+    }
 };
 
-export const updateUser = async (user : User) => {
-	const { error } = await supabase.from('students').update(user).eq('id', user.id);
-	if (error) throw error;
+// Fetch all user sessions
+export const fetchUserSessions = async (): Promise<UserSession[]> => {
+    try {
+        const { data, error } = await supabase.from('user_sessions').select('*');
+        if (error) {
+            throw error;
+        }
+        return data as UserSession[];
+    } catch (error) {
+        console.error('Error fetching user sessions:', error);
+        return [];
+    }
 };
+
+// Fetch a user's department
+export const fetchUserDepartment = async (departmentId: number): Promise<Department | null> => {
+    try {
+        const { data, error } = await supabase
+            .from('departments')
+            .select('*')
+            .eq('id', departmentId)
+            .single();
+        if (error) {
+            throw error;
+        }
+        return data as Department;
+    } catch (error) {
+        console.error('Error fetching department:', error);
+        return null;
+    }
+};
+
+// Fetch a user's course
+export const fetchUserCourse = async (courseId: number): Promise<Course | null> => {
+    try {
+        const { data, error } = await supabase
+            .from('courses')
+            .select('*')
+            .eq('id', courseId)
+            .single();
+        if (error) {
+            throw error;
+        }
+        return data as Course;
+    } catch (error) {
+        console.error('Error fetching course:', error);
+        return null;
+    }
+};
+
+// Fetch all departments
+export const fetchDepartments = async (): Promise<Department[]> => {
+    try {
+        const { data, error } = await supabase.from('departments').select('*');
+        if (error) {
+            throw error;
+        }
+        return data as Department[];
+    } catch (error) {
+        console.error('Error fetching departments:', error);
+        return [];
+    }
+};
+
+// Fetch combined user data
+export const fetchCombinedUserData = async (rfid: string): Promise<CombinedUserData | null> => {
+    try {
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('rfid', rfid)
+            .single();
+
+        if (userError || !user) {
+            throw new Error(`User not found: ${userError?.message || 'No user found with the provided RFID'}`);
+        }
+
+        const { data: course, error: courseError } = await supabase
+            .from('courses')
+            .select('*')
+            .eq('id', user.course_id)
+            .single();
+
+        if (courseError || !course) {
+            throw new Error(`Course not found: ${courseError?.message || 'No course found with the provided course ID'}`);
+        }
+
+        const { data: department, error: departmentError } = await supabase
+            .from('departments')
+            .select('*')
+            .eq('id', course.department_id)
+            .single();
+
+        if (departmentError || !department) {
+            throw new Error(`Department not found: ${departmentError?.message || 'No department found with the provided department ID'}`);
+        }
+
+        const { data: session, error: sessionError } = await supabase
+            .from('user_sessions')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('login_timestamp', { ascending: false })
+            .limit(1);
+
+        if (sessionError || session.length === 0) {
+            console.warn(`Session not found for user with ID ${user.id}`);
+            return {
+                given_name: user.given_name,
+                last_name: user.last_name,
+                student_id: user.id,
+                department: department.name,
+                course_name: course.name,
+                student_type: user.category,
+                rfid_id: user.rfid,
+                time_in: null,
+                time_out: null,
+                date: new Date().toLocaleDateString(),
+                course_id: user.course_id
+            };
+        }
+
+        return {
+            given_name: user.given_name,
+            last_name: user.last_name,
+            student_id: user.id,
+            department: department.name,
+            course_name: course.name,
+            student_type: user.category,
+            rfid_id: user.rfid,
+            time_in: session[0].login_timestamp,
+            time_out: session[0].logout_timestamp,
+            date: new Date().toLocaleDateString(),
+            course_id: user.course_id
+        };
+    } catch (error) {
+        console.error('Error fetching combined user data:', error);
+        return null;
+    }
+};
+
+// Handle user login
+export const handleUserLogin = async (
+    rfid: string,
+    users: User[],
+    userSessions: UserSession[]
+): Promise<{ message: string; success: boolean }> => {
+    try {
+        const user = users.find((u) => u.rfid === rfid);
+        if (!user) {
+            return { message: 'User not found', success: false };
+        }
+
+        const lastSession = userSessions.find(
+            (session) => session.user_id === user.id && !session.logout_timestamp
+        );
+
+        if (lastSession) {
+            const { error } = await supabase
+                .from('user_sessions')
+                .update({ logout_timestamp: new Date().toISOString() })
+                .eq('session_id', lastSession.session_id);
+
+            if (error) {
+                throw error;
+            }
+
+            return { message: 'User logged out successfully', success: true };
+        } else {
+            const { error } = await supabase.from('user_sessions').insert({
+                user_id: user.id,
+                login_timestamp: new Date().toISOString()
+            });
+
+            if (error) {
+                throw error;
+            }
+
+            return { message: 'User logged in successfully', success: true };
+        }
+    } catch (error) {
+        console.error('Error handling user login:', error);
+        return { message: 'Error handling user login', success: false };
+    }
+};
+
+// Update user data
+export const updateUser = async (user: CombinedUserData) => {
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .update({
+                given_name: user.given_name,
+                last_name: user.last_name,
+                department: user.department,
+                category: user.student_type,
+                rfid: user.rfid_id,
+                course_id: user.course_id
+            })
+            .eq('id', user.student_id);
+
+        if (error) {
+            throw error;
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error updating user:', error);
+        throw error;
+    }
+};
+
+// Delete user
+export const deleteUser = async (userId: number) => {
+    try {
+        const { error } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', userId);
+
+        if (error) {
+            throw error;
+        }
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        throw error;
+    }
+};
+
+// Format duration
+export function formatDuration(durationMs: number): string {
+    const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+    const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+    const durationSeconds = Math.floor((durationMs % (1000 * 60)) / 1000);
+
+    return `${durationHours} hour${durationHours !== 1 ? 's' : ''} ${durationMinutes} minute${durationMinutes !== 1 ? 's' : ''} ${durationSeconds} second${durationSeconds !== 1 ? 's' : ''}`;
+}
+
+// Get tap message
+export function getTapMessage(tapCount: number): string {
+    switch (tapCount) {
+        case 2:
+            return 'Please wait a few seconds...';
+        case 3:
+            return 'Still processing, please be patient...';
+        case 4:
+            return 'Too many attempts! Please wait a moment.';
+        case 6:
+            return 'Too many attempts, try again later.';
+        default:
+            return 'This user has already logged in/out recently. Please wait a few seconds.';
+    }
+}
