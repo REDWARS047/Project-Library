@@ -70,6 +70,14 @@
 		clearInterval(intervalId);
 	});
 
+	let latestUser: {
+		user: User;
+		department: Department;
+		course: Course;
+		timestamp: string;
+		isLoggedIn: boolean;
+	} | null = null;
+
 	$: if (latestUserSession && latestUser) {
 		latestUser.isLoggedIn =
 			latestUserSession.user_id === latestUser.user.id && !latestUserSession.logout_timestamp;

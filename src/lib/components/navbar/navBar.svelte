@@ -4,7 +4,7 @@
 
 <Navbar>
 	<NavBrand href="/">
-		<img src="/ccis-logo.jpg" class="me-3 h-6 sm:h-9" alt="CCIS Logo" />
+		<img src="/ccis-logo.png" class="me-3 h-6 sm:h-9" alt="CCIS Logo" />
 	</NavBrand>
 	<NavHamburger />
 	<NavUl>
