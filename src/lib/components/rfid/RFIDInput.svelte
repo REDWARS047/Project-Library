@@ -1,62 +1,93 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	let inputElement: HTMLInputElement;
+
+	export let inputElement: HTMLInputElement | null = null;
+	export let isLoginFailed = false;
 
 	const dispatch = createEventDispatcher();
 
 	function handleInput(event: Event) {
-		let input = inputElement.value;
+		let input = inputElement?.value || '';
 
 		if (input.length > 10) {
 			input = input.substring(0, 10);
-			inputElement.value = input;
+			if (inputElement) inputElement.value = input;
 		}
 
 		if (input.length === 10 && /^\d{10}$/.test(input)) {
 			dispatch('login', input);
-			inputElement.value = '';
+			if (inputElement) inputElement.value = '';
+			clearError();
 		} else {
 			dispatch('login', '');
+			if (input.length === 10) {
+				setError();
+			} else {
+				clearError();
+			}
 		}
 
-		inputElement.focus();
+		if (inputElement) inputElement.focus();
 	}
 
-	onMount(() => {
-		inputElement.focus();
+	function setError() {
+		isLoginFailed = true;
+		if (inputElement) {
+			inputElement.classList.add('bg-pink-200');
+			inputElement.classList.remove('bg-white');
+		}
+		setTimeout(clearError, 1000);
+	}
 
-		const keepFocus = (event: MouseEvent) => {
-			if (event.target !== inputElement) {
-				inputElement.focus();
-			}
-		};
+	function clearError() {
+		isLoginFailed = false;
+		if (inputElement) {
+			inputElement.classList.remove('bg-pink-200');
+			inputElement.classList.add('bg-white');
+		}
+	}
 
-		document.addEventListener('click', keepFocus);
+	// onMount(() => {
+	// 	if (inputElement) inputElement.focus();
 
-		return () => {
-			document.removeEventListener('click', keepFocus);
-		};
-	});
+	// 	const keepFocus = (event: MouseEvent) => {
+	// 		if (event.target !== inputElement && inputElement) {
+	// 			inputElement.focus();
+	// 		}
+	// 	};
+
+	// 	document.addEventListener('click', keepFocus);
+
+	// 	return () => {
+	// 		document.removeEventListener('click', keepFocus);
+	// 	};
+	// });
+
+	function getPlaceholder() {
+		return isLoginFailed ? 'INVALID ID. TRY AGAIN!' : 'PLEASE TAP YOUR ID';
+	}
 </script>
 
-<input
-	bind:this={inputElement}
-	type="number"
-	placeholder="Scan RFID"
-	on:input={handleInput}
-	autofocus
-	class="rounded-lg w-full no-spinner focus:border-blue-900"
-/>
+<div class="w-full max-w-4xl mx-auto">
+	<input
+		bind:this={inputElement}
+		type="number"
+		placeholder={getPlaceholder()}
+		on:input={handleInput}
+		class="w-full h-20 px-8 text-4xl text-center bg-white border-4 rounded-full focus:outline-none transition-colors duration-300
+        border-blue-900 focus:border-blue-600
+        placeholder:font-black placeholder:font-mono"
+	/>
+</div>
 
 <style>
-	.no-spinner {
-		appearance: none;
-		-moz-appearance: textfield;
+	input[type='number']::-webkit-inner-spin-button,
+	input[type='number']::-webkit-outer-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
 	}
 
-	.no-spinner::-webkit-outer-spin-button,
-	.no-spinner::-webkit-inner-spin-button {
-		margin: 0;
-		-webkit-appearance: none;
+	input[type='number'] {
+		-moz-appearance: textfield;
 	}
 </style>
