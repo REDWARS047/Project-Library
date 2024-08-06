@@ -8,6 +8,11 @@
 		fetchUserDepartment,
 		fetchUserCourse
 	} from '$lib/service/supabaseService';
+	import {
+		updateAttendanceData,
+		getTotalAttendance,
+		getAttendanceData
+	} from '$lib/service/attendanceData';
 	import LoginInput from '$lib/components/rfid/RFIDInput.svelte';
 	import { Modal } from 'flowbite-svelte';
 	import LoginModal from '$lib/components/login/loginModal.svelte';
@@ -65,18 +70,38 @@
 		clearInterval(intervalId);
 	});
 
-	let latestUser: {
-		user: User;
-		department: Department;
-		course: Course;
-		timestamp: string;
-		isLoggedIn: boolean;
-	} | null = null;
-
 	$: if (latestUserSession && latestUser) {
 		latestUser.isLoggedIn =
 			latestUserSession.user_id === latestUser.user.id && !latestUserSession.logout_timestamp;
 		latestUser.timestamp = new Date(latestUserSession.login_timestamp).toLocaleString();
+	}
+
+	async function updateAttendance(rfid: string, users: User[], userSessions: UserSession[]) {
+		console.log('Attempting to update attendance for RFID:', rfid);
+		const userLogin = await handleUserLogin(rfid, users, userSessions);
+		console.log('Login result:', userLogin);
+		if (userLogin.success) {
+			const user = users.find((u) => u.rfid === rfid);
+			if (user) {
+				const course = (await fetchUserCourse(user.course_id))[0];
+				const department = course
+					? (await fetchUserDepartment(course.department_id))[0]
+					: undefined;
+				console.log('Fetched Course:', course);
+				console.log('Fetched Department:', department);
+				if (department && course) {
+					updateAttendanceData(department.name, course.name);
+					console.log('Updated attendanceData:', getAttendanceData());
+					console.log('Total Attendance:', getTotalAttendance());
+				} else {
+					console.error('Department or Course not found for user:', user);
+				}
+			} else {
+				console.error('User not found for RFID:', rfid);
+			}
+		} else {
+			console.error('User login failed:', userLogin.message);
+		}
 	}
 
 	async function onLogin(event: CustomEvent<string>) {
@@ -132,6 +157,9 @@
 					currentUserDepartment,
 					isLoggedIn
 				});
+
+				// Update attendance after a successful login/logout
+				await updateAttendance(rfid, users, userSessions);
 			}
 		}
 
