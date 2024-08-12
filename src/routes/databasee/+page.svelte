@@ -22,11 +22,12 @@
         fetchUsers,
         fetchUserSessions,
         fetchCombinedUserData,
-        handleUserLogin,
         updateUser,
-        deleteUser
+        deleteUser,
+        fetchCourses,
+        fetchDepartments
     } from '$lib/service/supabaseService';
-    import type { CombinedUserData } from '$lib/usertypes';
+    import type { CombinedUserData, Course, Department } from '$lib/usertypes';
 
     let currentUserData: CombinedUserData[] = [];
     let searchTerm = '';
@@ -44,14 +45,25 @@
     let editModalOpen = false;
     let deleteModalOpen = false;
     let editUser: CombinedUserData | null = null;
-    let selectedDepartment = '';
+    let selectedDepartmentId = 0;
+    let availableCourses: Course[] = [];
+    let courses: Course[] = [];
+    let departments: Department[] = [];
 
     async function fetchData() {
         try {
-            const [users, userSessions] = await Promise.all([fetchUsers(), fetchUserSessions()]);
+            const [users, userSessions, courseData, departmentData] = await Promise.all([
+                fetchUsers(),
+                fetchUserSessions(),
+                fetchCourses(),
+                fetchDepartments()
+            ]);
             const combinedData = await Promise.all(users.map(user => fetchCombinedUserData(user.rfid)));
             currentUserData = combinedData.filter(data => data !== null) as CombinedUserData[];
             totalItems = currentUserData.length;
+
+            courses = courseData;
+            departments = departmentData;
             renderPagination();
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -63,7 +75,7 @@
     });
 
     const renderPagination = () => {
-        filteredItems = currentUserData.filter((item) => 
+        filteredItems = currentUserData.filter((item) =>
             (item.given_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.student_id.toString().includes(searchTerm) ||
@@ -71,7 +83,7 @@
             item.course_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.student_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.rfid_id?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-            (selectedDepartment === '' || item.department === selectedDepartment)
+            (selectedDepartmentId === 0 || item.department === getDepartmentNameById(selectedDepartmentId))
         );
         totalPages = Math.ceil(filteredItems.length / itemsPerPage);
         const currentPage = Math.ceil((currentPosition + 1) / itemsPerPage);
@@ -113,12 +125,14 @@
         goto('/registration');
     };
 
-    $: if (searchTerm || selectedDepartment) {
+    $: if (searchTerm || selectedDepartmentId) {
         renderPagination();
     }
 
     const openEditModal = (user: CombinedUserData) => {
         editUser = { ...user };
+        selectedDepartmentId = getDepartmentIdByName(editUser.department);
+        handleDepartmentChange();
         editModalOpen = true;
     };
 
@@ -127,13 +141,30 @@
         editUser = null;
     };
 
+    const handleDepartmentChange = () => {
+        if (selectedDepartmentId) {
+            availableCourses = courses.filter(course => course.department_id === selectedDepartmentId);
+            if (editUser) {
+                editUser.course_name = ''; // Reset the course selection when the department changes
+            }
+        } else {
+            availableCourses = [];
+        }
+    };
+
     const handleSaveEdit = async () => {
         if (editUser) {
+            editUser.department = getDepartmentNameById(selectedDepartmentId);
+            const selectedCourse = availableCourses.find(course => course.name === editUser?.course_name);
+            if (selectedCourse) {
+                editUser.course_id = selectedCourse.id;
+            }
+
             try {
-                await updateUser(editUser);
+                const updatedUser = await updateUser(editUser);
                 const index = currentUserData.findIndex(user => user.student_id === editUser?.student_id);
                 if (index !== -1) {
-                    currentUserData[index] = editUser;
+                    currentUserData[index] = updatedUser!;
                     renderPagination();
                     closeEditModal();
                 }
@@ -141,6 +172,16 @@
                 console.error('Error updating user:', error);
             }
         }
+    };
+
+    const getDepartmentNameById = (departmentId: number) => {
+        const department = departments.find(dept => dept.id === departmentId);
+        return department ? department.name : '';
+    };
+
+    const getDepartmentIdByName = (departmentName: string) => {
+        const department = departments.find(dept => dept.name === departmentName);
+        return department ? department.id : 0;
     };
 
     const toggleSelectItem = (studentId: number) => {
@@ -209,14 +250,11 @@
             </Button>
         </div>
         <div class="flex items-center">
-            <Select bind:value={selectedDepartment} class="ml-2">
-                <option value="">Choose option ...</option>
-                <option value="CCIS">CCIS</option>
-                <option value="CEA">CEA</option>
-                <option value="CAS">CAS</option>
-                <option value="CHS">CHS</option>
-				<option value="ATYCB">ATYCB</option>
-                <option value="SHS">SHS</option>
+            <Select bind:value={selectedDepartmentId} on:change={handleDepartmentChange} class="ml-2">
+                <option value="0">Choose department...</option>
+                {#each departments as department}
+                    <option value={department.id}>{department.name}</option>
+                {/each}
             </Select>
         </div>
     </div>
@@ -323,15 +361,24 @@
             </div>
             <div class="space-y-2">
                 <Label for="editDepartment">Department</Label>
-                <Input id="editDepartment" type="text" bind:value={editUser.department} />
+                <Select id="editDepartment" bind:value={selectedDepartmentId} on:change={handleDepartmentChange}>
+                    <option value="0">Choose department...</option>
+                    {#each departments as department}
+                        <option value={department.id}>{department.name}</option>
+                    {/each}
+                </Select>
+            </div>
+            <div class="space-y-2">
+                <Label for="editCourseName">Course</Label>
+                <Select id="editCourseName" bind:value={editUser.course_name}>
+                    {#each availableCourses as course}
+                        <option value={course.name}>{course.name}</option>
+                    {/each}
+                </Select>
             </div>
             <div class="space-y-2">
                 <Label for="editStudentType">Student Type</Label>
                 <Input id="editStudentType" type="text" bind:value={editUser.student_type} />
-            </div>
-            <div class="space-y-2">
-                <Label for="editCourseName">Course</Label>
-                <Input id="editCourseName" type="text" bind:value={editUser.course_name} />
             </div>
             <div class="space-y-2">
                 <Label for="editRFID">RFID ID</Label>
@@ -339,7 +386,7 @@
             </div>
             <div class="space-y-2">
                 <Label for="editStudentID">Student ID</Label>
-                <Input id="editStudentID" type="text" bind:value={editUser.student_id} disabled />
+                <Input id="editStudentID" type="text" value={editUser.student_id} disabled />
             </div>
             <div class="flex justify-end space-x-2">
                 <Button on:click={handleSaveEdit} class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Save</Button>

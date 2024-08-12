@@ -1,5 +1,6 @@
 import { supabase } from '$lib/supabaseClient';
 import type { User, UserSession, CombinedUserData, Department, Course } from '$lib/usertypes';
+import { updateAttendanceData } from '$lib/service/attendanceData';
 
 const recentLogins = new Map<string, number>();
 const COOLDOWN_PERIOD = 2000; // 2 seconds in milliseconds
@@ -137,10 +138,18 @@ export async function handleUserLogin(rfid: string, users: User[], userSessions:
     try {
         if (existingSession) {
             await logoutUser(existingSession, user, currentDateTime);
-            return { message: `Goodbye, ${user.given_name} ${user.last_name}.`, success: true };
+            return { 
+                message: `Goodbye, ${user.given_name} ${user.last_name}.`, 
+                success: true, 
+                isLoggedIn: false // Flag to indicate the user has logged out
+            };
         } else {
             await loginUser(user, currentDateTime);
-            return { message: `Welcome, ${user.given_name} ${user.last_name}.`, success: true };
+            return { 
+                message: `Welcome, ${user.given_name} ${user.last_name}.`, 
+                success: true, 
+                isLoggedIn: true // Flag to indicate the user has logged in
+            };
         }
     } catch (error) {
         console.error('Error handling user login:', error);
@@ -186,11 +195,6 @@ export function formatDuration(durationMs: number): string {
     return `${durationHours} hour${durationHours !== 1 ? 's' : ''} ${durationMinutes} minute${durationMinutes !== 1 ? 's' : ''} ${durationSeconds} second${durationSeconds !== 1 ? 's' : ''}`;
 }
 
-// Commented out as it's not used in the merged version
-// export function getTapMessage(tapCount: number): string {
-//     // ... (implementation as before)
-// }
-
 // Additional functions from the original version that might be useful
 export const fetchDepartments = async (): Promise<Department[]> => {
     try {
@@ -203,22 +207,50 @@ export const fetchDepartments = async (): Promise<Department[]> => {
     }
 };
 
+export const fetchCourses = async (): Promise<Course[]> => {
+    try {
+        const { data, error } = await supabase.from('courses').select('*');
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching courses:', error);
+        return [];
+    }
+};
+
 export const updateUser = async (user: CombinedUserData) => {
     try {
+        console.log("User data before update:", user);
+
+        // Update the user's basic information in the 'users' table
         const { data, error } = await supabase
             .from('users')
             .update({
                 given_name: user.given_name,
                 last_name: user.last_name,
-                department: user.department,
                 category: user.student_type,
                 rfid: user.rfid_id,
-                course_id: user.course_id
+                course_id: user.course_id // This updates the course and indirectly the department
             })
-            .eq('id', user.student_id);
+            .eq('id', user.student_id)
+            .select('*'); // This will return the updated row(s)
 
-        if (error) throw error;
-        return data;
+        if (error) {
+            console.error('Error updating user:', error); // Log any errors from Supabase
+            throw error;
+        }
+
+        console.log("Update response data:", data); // Log the response from Supabase
+
+        // Re-fetch the updated user data to confirm changes
+        const updatedUserData = await fetchCombinedUserData(user.rfid_id);
+        if (!updatedUserData) {
+            throw new Error('Failed to re-fetch user data after update');
+        }
+
+        console.log("Updated user data after re-fetch:", updatedUserData); // Log the re-fetched data
+
+        return updatedUserData; // Return the re-fetched data
     } catch (error) {
         console.error('Error updating user:', error);
         throw error;

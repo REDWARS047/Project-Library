@@ -94,12 +94,6 @@
         }
     });
 
-    // Example function to simulate a user login
-    async function simulateLogin() {
-        const rfid = '0490708168'; // Replace with a test RFID
-        await updateAttendance(rfid, users, userSessions);
-    }
-
     let departmentChart: Chart | null = null;
     let courseChart: Chart | null = null;
 
@@ -165,20 +159,6 @@
             });
         }
     }
-
-    function resetStatistics() {
-        attendanceData = {
-            CAS: { COMM: 0, MMA: 0 },
-            CHS: { PT: 0, PH: 0, PSY: 0, BIO: 0 },
-            ATYCB: { ENT: 0, ACT: 0, MA: 0, TM: 0, REM: 0 },
-            CCIS: { EMC: 0, CS: 0, IS: 0 },
-            CEA: { AR: 0, ChE: 0, CE: 0, CpE: 0, EE: 0, Ece: 0, IE: 0, ME: 0 },
-            SHS: { STEM: 0, TVL: 0, ABM: 0, HUMMS: 0 }
-        };
-        totalAttendance = 0;
-        courseAttendanceData = {};
-        createCharts();
-    }
 </script>
 
 <NavBar />
@@ -212,12 +192,6 @@
             {/each}
         </div>
     {/each}
-    <button class="mt-4 px-4 py-2 bg-blue-500 text-white rounded" on:click={resetStatistics}>
-        Reset Statistics
-    </button>
-    <button class="mt-4 px-4 py-2 bg-green-500 text-white rounded" on:click={simulateLogin}>
-        Simulate Login
-    </button>
 </Card>
 
 <div class="mt-4">
